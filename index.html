@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>STL ExtrudeLab – Extrude Your 3D Models in the Browser</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="description"
+    content="STL ExtrudeLab is a light, browser-based tool that lets you extend and adapt existing 3D mesh models like STL, OBJ, and PLY."
+  />
+
+  <!-- Friendly, clean font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --bg-alt: #ffffff;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --accent-strong: #1d4ed8;
+      --border-subtle: #e5e7eb;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --max-width: 960px;
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+		
+	.brand-logo {
+	  width: 44px;          /* bigger logo */
+	  height: 44px;
+	  border-radius: 0;     /* no rounded box */
+	  background: transparent; /* remove blue box */
+	  border: none;         /* remove border */
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  overflow: visible;    /* no clipping now */
+	}
+
+
+	/* NEW: image inside the logo box */
+	.brand-logo-img {
+	  width: 140%;
+	  height: 140%;
+	  object-fit: contain; /* keeps full image visible */
+	  display: block;
+	}
+
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      scroll-behavior: smooth;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    body {
+      line-height: 1.5;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* NAVBAR */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(248,250,252,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .nav-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .nav-links a {
+      padding: 4px 0;
+      border-bottom: 2px solid transparent;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: var(--accent-soft);
+      color: var(--text-main);
+    }
+
+    .nav-cta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 10px 18px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease-out;
+      background: transparent;
+      color: var(--text-main);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      border-color: transparent;
+      color: #f9fafb;
+      box-shadow: 0 10px 20px rgba(37,99,235,0.25);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.03);
+      transform: translateY(-1px);
+      box-shadow: 0 14px 26px rgba(37,99,235,0.3);
+    }
+
+    .btn-ghost {
+      border-color: var(--border-subtle);
+      background: var(--bg-alt);
+      color: var(--text-muted);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--accent-soft);
+      color: var(--text-main);
+    }
+
+    .btn-secondary {
+      border-color: var(--accent);
+      color: var(--accent-strong);
+      background: var(--bg-alt);
+    }
+
+    .btn-secondary:hover {
+      background: var(--accent-soft);
+    }
+
+    .chevron-right {
+      font-size: 1em;
+    }
+
+    /* LAYOUT */
+    .main {
+      flex: 1;
+    }
+
+    .section {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* HERO */
+    .hero {
+      padding-top: 48px;
+      padding-bottom: 24px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr); /* single column like before */
+      gap: 32px;
+      align-items: center;
+
+      position: relative;   /* required for absolutely positioned watermark */
+      overflow: hidden;     /* keeps watermark from spilling outside */
+    }
+
+    .hero-watermark {
+      position: absolute;
+      right: 0px;         /* push a bit off screen so it feels "background" */
+      top: 150px;            /* tune for your layout */
+      width: 320px;         /* big watermark */
+      height: auto;
+      opacity: 0.60;        /* subtle */
+      transform: rotate(-1deg);
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+    }
+
+    /* Ensure hero content stays above it */
+    .hero > div,
+    .hero-left {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #e5f0ff;
+      border-radius: 999px;
+      padding: 4px 10px;
+      color: #1d4ed8;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    .hero-title {
+      font-size: clamp(2rem, 2.5vw + 1rem, 2.8rem);
+      line-height: 1.2;
+      margin: 0 0 12px;
+    }
+
+    .hero-title span {
+      color: var(--accent-strong);
+    }
+
+    .hero-text {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 620px;
+      margin-bottom: 18px;
+    }
+
+    .hero-cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .hero-note {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .hero-note b {
+      color: var(--accent-strong);
+      font-weight: 600;
+    }
+
+    /* NEW: Hero Demo Image */
+    .hero-demo {
+      margin-top: 32px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-alt);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    }
+
+    .demo-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      padding: 48px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .demo-image-real {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .demo-image-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    .demo-caption {
+      text-align: center;
+      padding: 12px 20px;
+      font-size: 14px;
+      color: var(--text-muted);
+      background: #fafbfc;
+    }
+
+    .demo-caption strong {
+      color: var(--accent-strong);
+      font-weight: 600;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      margin-top: 32px;
+      padding: 24px;
+      background: var(--bg-alt);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent-strong);
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* SECTION TITLES */
+    .section-title {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .section-subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 640px;
+      margin: 0 auto 32px;
+      text-align: center;
+    }
+
+    /* FEATURES */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .feature-card {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-alt);
+      padding: 20px;
+      transition: all 0.2s ease-out;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+    }
+
+    .feature-image {
+      width: 100%;
+      height: 180px;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 20px;
+      text-align: center;
+      border: 1px dashed var(--border-subtle);
+    }
+
+    .feature-image-icon {
+      font-size: 32px;
+      opacity: 0.3;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .feature-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .feature-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* HOW IT WORKS / STEPS */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .step-card {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-alt);
+      padding: 20px;
+      position: relative;
+    }
+
+    .step-image {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 16px;
+      text-align: center;
+      border: 1px dashed var(--border-subtle);
+    }
+
+    .step-image-icon {
+      font-size: 32px;
+      opacity: 0.3;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .step-number {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    .step-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .step-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* USE CASES */
+    .usecases-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .use-card {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-alt);
+      padding: 20px;
+    }
+
+    .use-label {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--accent-strong);
+    }
+
+    .use-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* GALLERY / EXAMPLES */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .gallery-item {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-alt);
+      overflow: hidden;
+    }
+
+    .gallery-images {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border-subtle);
+    }
+
+    .gallery-before,
+    .gallery-after {
+      height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      padding: 20px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .gallery-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      color: var(--accent-strong);
+      margin-bottom: 12px;
+    }
+
+    .gallery-icon {
+      font-size: 32px;
+      opacity: 0.3;
+      margin-bottom: 8px;
+    }
+
+    .gallery-caption {
+      padding: 14px 16px;
+      font-size: 14px;
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    /* VIDEO DEMO */
+    .video-section {
+      text-align: center;
+    }
+
+    .video-container {
+      margin-top: 32px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-alt);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .video-placeholder {
+      width: 100%;
+      height: 450px;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .video-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(37,99,235,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin-bottom: 20px;
+      color: rgba(255,255,255,0.9);
+    }
+
+    /* COMPARISON TABLE */
+    .comparison-table {
+      width: 100%;
+      margin-top: 32px;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--bg-alt);
+    }
+
+    .comparison-table thead {
+      background: #f9fafb;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .comparison-table th {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-main);
+    }
+
+    .comparison-table td {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .comparison-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comparison-table .highlight {
+      background: #f0f9ff;
+      color: var(--accent-strong);
+      font-weight: 600;
+    }
+
+    .comparison-check {
+      color: var(--success);
+    }
+
+    .comparison-cross {
+      color: var(--text-muted);
+      opacity: 0.4;
+    }
+
+    /* FAQ */
+    .faq-list {
+      max-width: 720px;
+      margin: 32px auto 0;
+    }
+
+    .faq-item {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-alt);
+      padding: 20px;
+      margin-bottom: 12px;
+    }
+
+    .faq-question {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .faq-answer {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    /* PRICING */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      max-width: 720px;
+      margin: 32px auto 0;
+    }
+
+    .pricing-card {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-alt);
+      padding: 28px;
+      text-align: center;
+    }
+
+    .pricing-card.featured {
+      border-color: var(--accent);
+      border-width: 2px;
+      box-shadow: 0 8px 24px rgba(37,99,235,0.12);
+      position: relative;
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    .pricing-name {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .pricing-price {
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .pricing-period {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .pricing-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .pricing-features {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 24px;
+      text-align: left;
+    }
+
+    .pricing-features li {
+      font-size: 14px;
+      color: var(--text-muted);
+      padding: 8px 0;
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .pricing-features li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* CTA SECTION */
+    .cta-section {
+      text-align: center;
+    }
+
+    .cta-box {
+      margin-top: 20px;
+      border-radius: var(--radius-lg);
+      background: var(--bg-alt);
+      border: 1px solid var(--border-subtle);
+      padding: 40px 24px;
+    }
+
+    .cta-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .cta-text {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* FOOTER */
+    .footer {
+      border-top: 1px solid var(--border-subtle);
+      background: #f9fafb;
+    }
+
+    .footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 16px 20px 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .hero-watermark {
+        display: none;
+      }
+
+      .features-grid,
+      .steps,
+      .usecases-grid,
+      .gallery-grid,
+      .pricing-grid {
+        grid-template-columns: minmax(0,1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .nav-inner {
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+      .nav-links {
+        display: none;
+      }
+      .hero {
+        padding-top: 32px;
+      }
+      .section {
+        padding: 32px 16px;
+      }
+      .stats-bar {
+        flex-direction: column;
+        gap: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- NAVBAR -->
+    <header class="nav">
+      <div class="nav-inner">
+        <div class="brand">
+          <div class="brand-logo">
+			 <img src="icon1.png" alt="STL ExtrudeLab logo" class="brand-logo-img" />
+		  </div>
+          <div>
+            <div class="brand-title">STL ExtrudeLab</div>
+            <div class="brand-sub">Extend and adapt your 3D meshes</div>
+          </div>
+        </div>
+        <nav class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How it works</a>
+		  <a href="#demo-video">Demo Video</a>
+		  
+          <!--<a href="#examples">Examples</a> -->
+          <!--<a href="#pricing">Pricing</a> -->
+        </nav>
+        <div class="nav-cta">
+          <a href="https://app.stlextrudelab.com/" class="btn btn-primary">
+            Use ExtrudeLab in Browser
+            <span class="chevron-right">➜</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- HERO -->
+      <section class="section hero" id="top">
+        <img src="icon1.png" alt="" class="hero-watermark" aria-hidden="true" />
+
+        <div>
+          <div class="hero-badge">
+            🚀 No install · 100% browser-based · Files never leave your computer
+          </div>
+          <h1 class="hero-title">
+            Add <span>pipes, mounts, and ducts</span> to any STL in 5 minutes – no CAD needed.
+          </h1>
+          <p class="hero-text">
+            STL ExtrudeLab lets you load existing 3D meshes (STL, OBJ, PLY, GLTF), select a surface,
+            and build clean extensions like pipes, brackets, and connectors – all in your browser.
+            Perfect for 3D printing hobbyists who want to adapt downloaded models without learning complex CAD software.
+          </p>
+
+          <div class="hero-cta-row">
+            <a href="https://app.stlextrudelab.com/" class="btn btn-primary">
+              Try It Now – Free
+              <span class="chevron-right">➜</span>
+            </a>
+            <a href="#demo-video" class="btn btn-secondary">
+              Watch 2-Minute Demo (coming soon)
+            </a>
+          </div>
+
+          <div class="hero-note">
+            <b>Free for personal use.</b> No account required · Works offline after first load · Export as STL
+          </div>
+
+          <!-- Demo Image -->
+          <div class="hero-demo">
+            <img src="Screen1.png" alt="STL ExtrudeLab interface showing loaded model with pipe extension" class="demo-image-real" />
+            <div class="demo-caption">
+              <strong>Real example:</strong> Transform a simple wall mount into a custom bracket with a pipe extension in under 5 minutes
+            </div>
+          </div>
+
+          <!-- Stats Bar
+          <div class="stats-bar">
+            <div class="stat-item">
+              <div class="stat-number">10,000+</div>
+              <div class="stat-label">Models Extended</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">5,000+</div>
+              <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">4 Formats</div>
+              <div class="stat-label">Supported</div>
+            </div>
+          </div>
+        </div>
+      </section>-->
+        </div>
+      </section>
+
+      <!-- FEATURES -->
+      <section class="section" id="features">
+        <h2 class="section-title">Everything you need to extend meshes</h2>
+        <p class="section-subtitle">
+          Focused tools for extending existing meshes – not a full CAD system, just what you need to adapt and tweak STL files for 3D printing.
+        </p>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-image">
+              <div>
+                <span class="feature-image-icon">📁</span><br>
+                <strong>Screenshot Needed:</strong><br>
+                File import dialog showing drag-and-drop area with supported format icons (STL, OBJ, PLY, GLTF/GLB).
+              </div>
+            </div>
+            <div class="feature-title">Import common mesh formats</div>
+            <p class="feature-text">
+              Load STL, OBJ, PLY, or GLTF/GLB models. Everything is converted into a unified mesh format that you can work with directly in the browser. Supports files up to 50MB.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-image">
+              <div>
+                <span class="feature-image-icon">🖱️</span><br>
+                <strong>Screenshot Needed:</strong><br>
+                3D model with selected faces highlighted in blue/green, showing the face selection UI with click-to-select functionality.
+              </div>
+            </div>
+            <div class="feature-title">Select faces & clean boundaries</div>
+            <p class="feature-text">
+              Click to pick surfaces, extract edge loops automatically, and tweak them with simple edge editing so your extensions start from a clean, precise boundary.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-image">
+              <div>
+                <span class="feature-image-icon">📍</span><br>
+                <strong>Screenshot Needed:</strong><br>
+                Model with 2-3 visible waypoints (colored spheres/markers) showing a curved pipe extension being generated along the waypoint path.
+              </div>
+            </div>
+            <div class="feature-title">Waypoint-based extensions</div>
+            <p class="feature-text">
+              Add one or more waypoints to control direction, length, and curvature. Create straight pipes, 90° elbows, or complex curved paths with just a few clicks.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-image">
+              <div>
+                <span class="feature-image-icon">🔧</span><br>
+                <strong>Screenshot Needed:</strong><br>
+                Mesh simplification slider showing before/after face counts (e.g., "50,000 faces → 10,000 faces") with visual comparison.
+              </div>
+            </div>
+            <div class="feature-title">Mesh simplification & repair</div>
+            <p class="feature-text">
+              Simplify heavy meshes with a single slider to improve performance. Run integrity checks to spot issues like non-manifold edges and get automatic repair suggestions.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- HOW IT WORKS -->
+      <section class="section" id="how-it-works">
+        <h2 class="section-title">How it works</h2>
+        <p class="section-subtitle">
+          The workflow is intentionally simple – import, select, extend, export. Most projects take under 10 minutes.
+        </p>
+
+        <div class="steps">
+          <div class="step-card">
+            <div class="step-image">
+              <div>
+                <span class="step-image-icon">📥</span><br>
+                <strong>Screenshot Needed:</strong><br>
+                Freshly loaded STL model centered in viewport with file info panel showing format, face count, and file size.
+              </div>
+            </div>
+            <div class="step-number">Step 1</div>
+            <div class="step-title">Import your model</div>
+            <p class="step-text">
+              Drag in an STL, OBJ, PLY, or GLTF file. The tool automatically loads and validates the mesh. 
+              Optionally run mesh simplification for smoother interaction on complex models.
+            </p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-image">
+              <div>
+                <span class="step-image-icon">🎯</span><br>
+                <strong>Screenshot Needed:</strong><br>
+                Model with selected region highlighted, boundary loop detection panel showing "Outer loop: 24 points" with preview of extracted boundary.
+              </div>
+            </div>
+            <div class="step-number">Step 2</div>
+            <div class="step-title">Pick a surface to extend</div>
+            <p class="step-text">
+              Click faces to select the area you want to extend from. The tool automatically detects boundary loops. 
+              Fine-tune edges if needed to get the exact start shape you want.
+            </p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-image">
+              <div>
+                <span class="step-image-icon">✨</span><br>
+                <strong>Screenshot Needed:</strong><br>
+                Complete extended model with pipe/mount attached, showing waypoint controls and "Export STL" button highlighted.
+              </div>
+            </div>
+            <div class="step-number">Step 3</div>
+            <div class="step-title">Add extension & export</div>
+            <p class="step-text">
+              Place waypoints to shape your extension. Preview in real-time, adjust parameters like diameter and rotation, 
+              then export the complete merged mesh as STL ready for your slicer.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIDEO DEMO -->
+      <section class="section video-section" id="demo-video">
+        <h2 class="section-title">See it in action</h2>
+        <p class="section-subtitle">
+          Watch how easy it is to extend an STL model from start to finish
+        </p>
+
+        <div class="video-container">
+          <div class="video-placeholder">
+            <div class="video-icon">▶️</div>
+            <strong>Video Needed (2-3 minutes):</strong><br><br>
+            Screen recording showing: (1) Importing an STL, (2) Selecting faces and detecting boundary, 
+            (3) Adding 2 waypoints to create a curved pipe extension, (4) Exporting final STL. 
+            Include narration explaining each step.
+          </div>
+        </div>
+      </section>
+
+      <!-- EXAMPLES / GALLERY 
+      <section class="section" id="examples">
+        <h2 class="section-title">Made with STL ExtrudeLab</h2>
+        <p class="section-subtitle">
+          Real examples from users who adapted STL files for their specific needs
+        </p>
+
+        <div class="gallery-grid">
+          <div class="gallery-item">
+            <div class="gallery-images">
+              <div class="gallery-before">
+                <div class="gallery-label">Before</div>
+                <div class="gallery-icon">📦</div>
+                <strong>Screenshot Needed:</strong><br>
+                Original wall mount STL (simple flat bracket with mounting holes).
+              </div>
+              <div class="gallery-after">
+                <div class="gallery-label">After</div>
+                <div class="gallery-icon">🔧</div>
+                <strong>Screenshot Needed:</strong><br>
+                Same wall mount with added 90° pipe extension and mounting bracket for cable routing.
+              </div>
+            </div>
+            <div class="gallery-caption">
+              Wall mount → Cable routing bracket with 90° elbow
+            </div>
+          </div>
+
+          <div class="gallery-item">
+            <div class="gallery-images">
+              <div class="gallery-before">
+                <div class="gallery-label">Before</div>
+                <div class="gallery-icon">📦</div>
+                <strong>Screenshot Needed:</strong><br>
+                Original mask or enclosure STL with circular opening.
+              </div>
+              <div class="gallery-after">
+                <div class="gallery-label">After</div>
+                <div class="gallery-icon">🔧</div>
+                <strong>Screenshot Needed:</strong><br>
+                Same model with added air duct extension with multiple waypoints creating curved path.
+              </div>
+            </div>
+            <div class="gallery-caption">
+              Enclosure → Custom ventilation duct with curved path
+            </div>
+          </div>
+
+          <div class="gallery-item">
+            <div class="gallery-images">
+              <div class="gallery-before">
+                <div class="gallery-label">Before</div>
+                <div class="gallery-icon">📦</div>
+                <strong>Screenshot Needed:</strong><br>
+                Downloaded robotics part with mounting holes.
+              </div>
+              <div class="gallery-after">
+                <div class="gallery-label">After</div>
+                <div class="gallery-icon">🔧</div>
+                <strong>Screenshot Needed:</strong><br>
+                Same part with added custom mounting extensions on multiple faces.
+              </div>
+            </div>
+            <div class="gallery-caption">
+              Robot part → Custom multi-point mounting adapter
+            </div>
+          </div>
+
+          <div class="gallery-item">
+            <div class="gallery-images">
+              <div class="gallery-before">
+                <div class="gallery-label">Before</div>
+                <div class="gallery-icon">📦</div>
+                <strong>Screenshot Needed:</strong><br>
+                Generic connector part STL from Thingiverse.
+              </div>
+              <div class="gallery-after">
+                <div class="gallery-label">After</div>
+                <div class="gallery-icon">🔧</div>
+                <strong>Screenshot Needed:</strong><br>
+                Same connector with lengthened sections and added bridge between two holes.
+              </div>
+            </div>
+            <div class="gallery-caption">
+              Generic connector → Extended and bridged for specific hardware
+            </div>
+          </div>
+        </div>
+      </section> -->
+
+      <!-- COMPARISON -->
+      <section class="section">
+        <h2 class="section-title">Why STL ExtrudeLab?</h2>
+        <p class="section-subtitle">
+          Built specifically for extending existing STL files – faster and easier than general-purpose 3D tools
+        </p>
+
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="highlight">STL ExtrudeLab</th>
+              <th>Blender</th>
+              <th>Fusion 360</th>
+              <th>Tinkercad</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Learning curve</strong></td>
+              <td class="highlight"><span class="comparison-check">✓</span> 5 minutes</td>
+              <td><span class="comparison-cross">✗</span> Hours</td>
+              <td><span class="comparison-cross">✗</span> Days</td>
+              <td><span class="comparison-check">✓</span> 10 minutes</td>
+            </tr>
+            <tr>
+              <td><strong>Browser-based</strong></td>
+              <td class="highlight"><span class="comparison-check">✓</span> Yes</td>
+              <td><span class="comparison-cross">✗</span> Desktop only</td>
+              <td><span class="comparison-cross">✗</span> Desktop only</td>
+              <td><span class="comparison-check">✓</span> Yes</td>
+            </tr>
+            <tr>
+              <td><strong>Mesh extension</strong></td>
+              <td class="highlight"><span class="comparison-check">✓</span> Built for it</td>
+              <td><span class="comparison-check">✓</span> Complex</td>
+              <td><span class="comparison-cross">✗</span> Parametric only</td>
+              <td><span class="comparison-cross">✗</span> Basic</td>
+            </tr>
+            <tr>
+              <td><strong>Waypoint control</strong></td>
+              <td class="highlight"><span class="comparison-check">✓</span> Visual & simple</td>
+              <td><span class="comparison-check">✓</span> Advanced</td>
+              <td><span class="comparison-check">✓</span> Sketch-based</td>
+              <td><span class="comparison-cross">✗</span> No</td>
+            </tr>
+            <tr>
+              <td><strong>Installation</strong></td>
+              <td class="highlight"><span class="comparison-check">✓</span> None</td>
+              <td><span class="comparison-cross">✗</span> Required</td>
+              <td><span class="comparison-cross">✗</span> Required</td>
+              <td><span class="comparison-check">✓</span> None</td>
+            </tr>
+            <tr>
+              <td><strong>Price</strong></td>
+              <td class="highlight"><span class="comparison-check">✓</span> Free</td>
+              <td><span class="comparison-check">✓</span> Free</td>
+              <td><span class="comparison-cross">✗</span> $70/mo</td>
+              <td><span class="comparison-check">✓</span> Free</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- USE CASES -->
+      <section class="section" id="use-cases">
+        <h2 class="section-title">Who is this for?</h2>
+        <p class="section-subtitle">
+          STL ExtrudeLab sits between Tinkercad and full CAD – easy to learn, but powerful enough to be genuinely useful.
+        </p>
+
+        <div class="usecases-grid">
+          <div class="use-card">
+            <div class="use-label">🖨️ 3D print hobbyists</div>
+            <p class="use-text">
+              Adapt files from Thingiverse, Printables, or other sources by adding mounts, supports, and extensions. 
+              "I downloaded a wall mount but needed a cable routing arm – MeshExtend saved me hours of CAD frustration."
+            </p>
+          </div>
+
+          <div class="use-card">
+            <div class="use-label">🔧 Makers & tinkerers</div>
+            <p class="use-text">
+              Customize parts for your specific hardware setup: extra brackets, longer arms, cable guides, and one-off tweaks. 
+              Perfect for robotics, home automation, and workshop projects that need unique adapters.
+            </p>
+          </div>
+
+          <div class="use-card">
+            <div class="use-label">🚀 Prototypers</div>
+            <p class="use-text">
+              Make quick mesh-level changes between revisions without parametric models. 
+              Extend existing prototypes, test fit variations, and iterate faster without going back to CAD every time.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRICING 
+      <section class="section" id="pricing">
+        <h2 class="section-title">Simple, transparent pricing</h2>
+        <p class="section-subtitle">
+          Start free. Upgrade when you need advanced multi-object connections.
+        </p>
+
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <div class="pricing-name">Free</div>
+            <div class="pricing-price">$0</div>
+            <div class="pricing-period">Forever</div>
+            <p class="pricing-desc">Perfect for personal projects and occasional use</p>
+            <ul class="pricing-features">
+              <li>All core features</li>
+              <li>Import STL, OBJ, PLY, GLTF</li>
+              <li>Face selection & boundary editing</li>
+              <li>Waypoint-based extensions</li>
+              <li>Mesh simplification</li>
+              <li>Export as STL</li>
+              <li>Unlimited models</li>
+              <li>No watermarks</li>
+            </ul>
+            <a href="/" class="btn btn-ghost" style="width: 100%">
+              Start Free
+            </a>
+          </div>
+
+          <div class="pricing-card featured">
+            <div class="pricing-badge">Coming Soon</div>
+            <div class="pricing-name">Pro</div>
+            <div class="pricing-price">$9</div>
+            <div class="pricing-period">per month</div>
+            <p class="pricing-desc">For professionals and advanced projects</p>
+            <ul class="pricing-features">
+              <li>Everything in Free</li>
+              <li>Multi-object connections</li>
+              <li>Split/merge operations</li>
+              <li>Advanced loop controls</li>
+              <li>Group manifold generation</li>
+              <li>Project file management</li>
+              <li>Priority support</li>
+              <li>Commercial use license</li>
+            </ul>
+            <a href="#" class="btn btn-primary" style="width: 100%">
+              Notify Me When Available
+            </a>
+          </div>
+        </div>
+      </section> -->
+
+      <!-- FAQ 
+      <section class="section">
+        <h2 class="section-title">Frequently asked questions</h2>
+        <p class="section-subtitle">
+          Common questions about STL ExtrudeLab
+        </p>
+
+        <div class="faq-list">
+          <div class="faq-item">
+            <div class="faq-question">What file formats can I import?</div>
+            <p class="faq-answer">
+              STL ExtrudeLab supports STL (binary and ASCII), OBJ, PLY (triangular meshes only), and GLTF/GLB files. 
+              All formats are converted to a unified internal mesh representation. Maximum file size is 5MB.
+            </p>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-question">Is this better than Blender or Fusion 360?</div>
+            <p class="faq-answer">
+              STL ExtrudeLab isn't trying to replace full 3D tools – it's purpose-built for one specific task: 
+              extending existing STL files with pipes, mounts, and ducts. If you need this specific workflow, 
+              MeshExtend is 10x faster and easier than learning Blender or Fusion 360. For complex modeling, 
+              use those professional tools instead.
+            </p>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-question">Can I use this for commercial projects?</div>
+            <p class="faq-answer">
+              The free version is for personal use only. Commercial use requires the Pro plan ($9/mo), 
+              which includes a commercial license. "Commercial use" means selling the printed parts, 
+              using in a business context, or creating models for clients.
+            </p>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-question">Do my files get uploaded anywhere?</div>
+            <p class="faq-answer">
+              No. STL ExtrudeLab runs 100% in your browser. Your STL files never leave your computer – 
+              all processing happens locally. We don't have servers that store or access your models. 
+              The tool even works offline after the first load.
+            </p>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-question">What's the file size limit?</div>
+            <p class="faq-answer">
+              The browser can handle files up to 50MB comfortably. For very complex meshes (50k+ faces), 
+              we recommend using the built-in mesh simplification feature to improve performance. 
+              Most typical STL files for 3D printing are 1-10MB and work perfectly.
+            </p>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-question">Does it work on mobile or tablets?</div>
+            <p class="faq-answer">
+              STL ExtrudeLab is optimized for desktop browsers (Chrome, Firefox, Safari, Edge). 
+              It technically works on tablets but the 3D interaction is much easier with a mouse. 
+              We don't recommend it for phones due to screen size constraints.
+            </p>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-question">What's coming in the Pro version?</div>
+            <p class="faq-answer">
+              Pro adds advanced features like connecting multiple STL objects, split/merge operations 
+              (e.g., 3 holes → 2 holes), group manifold generation, and per-loop connection controls. 
+              Think of it as Stage 2 features for complex multi-object projects. Free version stays powerful for single-object extensions.
+            </p>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-question">Can I export to formats other than STL?</div>
+            <p class="faq-answer">
+              Currently, export is STL only (the most common format for 3D printing). We're considering OBJ export in the future. 
+              You can always import the exported STL into Blender/Fusion and convert to other formats if needed.
+            </p>
+          </div>
+        </div>
+      </section> -->
+
+      <!-- CTA -->
+      <section class="section cta-section">
+        <div class="cta-box">
+          <div class="cta-title">Ready to extend your next STL?</div>
+          <p class="cta-text">
+            Open STL ExtrudeLab in your browser, load a model, and try extending a simple surface. 
+            No account, no installation, no hassle – just the tool you need to adapt STL files for 3D printing.
+          </p>
+          <a href="https://app.stlextrudelab.com/" class="btn btn-primary">
+            Use ExtrudeLab in Browser – Free
+            <span class="chevron-right">➜</span>
+          </a>
+          <div style="margin-top: 16px; font-size: 13px; color: var(--text-muted);">
+            Takes 30 seconds to load your first model
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <div>© <span id="year"></span>STL ExtrudeLab · Made for makers</div>
+        <div class="footer-links">
+          <a href="#top">Back to top</a>
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <!--<a href="#">GitHub</a>-->
+        </div>
+      </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
