@@ -411,25 +411,18 @@
     .feature-image {
       width: 100%;
       height: 180px;
-      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
       border-radius: 8px;
       margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      font-size: 13px;
-      padding: 20px;
-      text-align: center;
-      border: 1px dashed var(--border-subtle);
+      overflow: hidden;
     }
 
-    .feature-image-icon {
-      font-size: 32px;
-      opacity: 0.3;
+    .feature-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
       display: block;
-      margin-bottom: 8px;
     }
+
 
     .feature-title {
       font-size: 16px;
@@ -462,24 +455,16 @@
     .step-image {
       width: 100%;
       height: 200px;
-      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
       border-radius: 8px;
       margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      font-size: 12px;
-      padding: 16px;
-      text-align: center;
-      border: 1px dashed var(--border-subtle);
+      overflow: hidden;
     }
 
-    .step-image-icon {
-      font-size: 32px;
-      opacity: 0.3;
+    .step-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
       display: block;
-      margin-bottom: 8px;
     }
 
     .step-number {
@@ -1014,11 +999,7 @@
         <div class="features-grid">
           <div class="feature-card">
             <div class="feature-image">
-              <div>
-                <span class="feature-image-icon">📁</span><br>
-                <strong>Screenshot Needed:</strong><br>
-                File import dialog showing drag-and-drop area with supported format icons (STL, OBJ, PLY, GLTF/GLB).
-              </div>
+              <img src="img/resized/Import common mesh formats.png" alt="Import common mesh formats – STL, OBJ, PLY, GLB">
             </div>
             <div class="feature-title">Import common mesh formats</div>
             <p class="feature-text">
@@ -1028,11 +1009,7 @@
 
           <div class="feature-card">
             <div class="feature-image">
-              <div>
-                <span class="feature-image-icon">🖱️</span><br>
-                <strong>Screenshot Needed:</strong><br>
-                3D model with selected faces highlighted in blue/green, showing the face selection UI with click-to-select functionality.
-              </div>
+              <img src="img/resized/Select faces &amp; clean boundaries.png" alt="Select faces and clean boundaries on a 3D mesh">
             </div>
             <div class="feature-title">Select faces & clean boundaries</div>
             <p class="feature-text">
@@ -1042,11 +1019,7 @@
 
           <div class="feature-card">
             <div class="feature-image">
-              <div>
-                <span class="feature-image-icon">📍</span><br>
-                <strong>Screenshot Needed:</strong><br>
-                Model with 2-3 visible waypoints (colored spheres/markers) showing a curved pipe extension being generated along the waypoint path.
-              </div>
+              <img src="img/resized/Waypoint-based extensions.png" alt="Waypoint-based extensions – control direction and curvature">
             </div>
             <div class="feature-title">Waypoint-based extensions</div>
             <p class="feature-text">
@@ -1056,11 +1029,7 @@
 
           <div class="feature-card">
             <div class="feature-image">
-              <div>
-                <span class="feature-image-icon">🔧</span><br>
-                <strong>Screenshot Needed:</strong><br>
-                Mesh simplification slider showing before/after face counts (e.g., "50,000 faces → 10,000 faces") with visual comparison.
-              </div>
+              <img src="img/resized/Mesh simplification &amp; repair.png" alt="Mesh simplification and repair – before and after comparison">
             </div>
             <div class="feature-title">Mesh simplification & repair</div>
             <p class="feature-text">
@@ -1080,11 +1049,7 @@
         <div class="steps">
           <div class="step-card">
             <div class="step-image">
-              <div>
-                <span class="step-image-icon">📥</span><br>
-                <strong>Screenshot Needed:</strong><br>
-                Freshly loaded STL model centered in viewport with file info panel showing format, face count, and file size.
-              </div>
+              <img src="img/resized/Import your model.png" alt="Import your 3D model into STL ExtrudeLab">
             </div>
             <div class="step-number">Step 1</div>
             <div class="step-title">Import your model</div>
@@ -1096,11 +1061,7 @@
 
           <div class="step-card">
             <div class="step-image">
-              <div>
-                <span class="step-image-icon">🎯</span><br>
-                <strong>Screenshot Needed:</strong><br>
-                Model with selected region highlighted, boundary loop detection panel showing "Outer loop: 24 points" with preview of extracted boundary.
-              </div>
+              <img src="img/resized/Pick a surface to extend.png" alt="Pick a surface to extend on your 3D model">
             </div>
             <div class="step-number">Step 2</div>
             <div class="step-title">Pick a surface to extend</div>
@@ -1112,11 +1073,7 @@
 
           <div class="step-card">
             <div class="step-image">
-              <div>
-                <span class="step-image-icon">✨</span><br>
-                <strong>Screenshot Needed:</strong><br>
-                Complete extended model with pipe/mount attached, showing waypoint controls and "Export STL" button highlighted.
-              </div>
+              <img src="img/resized/Add extension &amp; export.png" alt="Add extension and export your model as STL">
             </div>
             <div class="step-number">Step 3</div>
             <div class="step-title">Add extension & export</div>
